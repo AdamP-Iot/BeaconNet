@@ -1,0 +1,54 @@
+void setup() {
+  for (int i = 0; i <= 22; i++) {
+    pinMode(i, OUTPUT);
+  }
+}
+
+void loop() {
+  for (int i = 0; i <= 22; i++) {
+    digitalWrite(i, HIGH);
+    delay(500);
+    digitalWrite(i, LOW);
+    delay(500);
+  }
+}
+
+#define OPTIC_PIN 2 
+
+void setup() {
+  pinMode(OPTIC_PIN, INPUT); 
+  Serial.begin(115200);      
+}
+
+void loop() {
+  int state = digitalRead(OPTIC_PIN); 
+  if (state == HIGH) {
+    Serial.println("ZAPNUTÉ");
+  } else {
+    Serial.println("VYPNUTÉ");
+  }
+  delay(500); 
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+#define OPT_PIN 16   // GPIO pin připojený k výstupu V1 z optočlenu
+#define LED_PIN 25   // GPIO pin pro LED na breadboardu
+
+void setup() {
+  pinMode(OPT_PIN, INPUT);  // Nastavení GPIO16 jako vstup pro optočlen
+  pinMode(LED_PIN, OUTPUT); // Nastavení GPIO25 jako výstup pro LED
+
+  Serial.begin(115200); // Sériová komunikace pro ladění
+}
+
+void loop() {
+  int optoState = digitalRead(OPT_PIN);  // Čtení stavu optočlenu
+
+  if (optoState == HIGH) {  // Pokud je výstup z optočlenu HIGH
+    digitalWrite(LED_PIN, HIGH);  // Rozsvítí LED
+    Serial.println("Zařízení je zapnuté (signál detekován).");
+  } else {  // Pokud je výstup LOW
+    digitalWrite(LED_PIN, LOW);  // LED zhasne
+    Serial.println("Zařízení je vypnuté (žádný signál).");
+  }
+
+  delay(500);  // Pauza mezi čteními
+}
