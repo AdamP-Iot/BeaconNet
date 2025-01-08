@@ -1,0 +1,58 @@
+#define OPT_PIN 16   
+#define LED_PIN 25   
+
+void setup() {
+  pinMode(OPT_PIN, INPUT);  
+  pinMode(LED_PIN, OUTPUT); 
+
+  Serial.begin(115200); 
+}
+
+void loop() {
+  int optoState = digitalRead(OPT_PIN); 
+
+  if (optoState == HIGH) {  
+    digitalWrite(LED_PIN, HIGH);  
+  } else {  // Pokud je výstup LOW
+    digitalWrite(LED_PIN, LOW);  
+   
+  }
+
+  delay(500); 
+}
+
+vylepseni
+
+#define OPT_PIN 16
+#define LED_PIN 25
+
+void setup() 
+{
+  pinMode(OPT_PIN, INPUT);
+  pinMode(LED_PIN, OUTPUT);
+  Serial.begin(115200);
+}
+
+void loop() 
+{
+  int optoState = digitalRead(OPT_PIN);
+  static bool hotovo = false;
+  if (optoState == HIGH && !hotovo)
+   {
+    for (int i = 0; i < 3; i++) 
+    {
+      digitalWrite(LED_PIN, HIGH);
+      delay(500);
+      digitalWrite(LED_PIN, LOW);
+      delay(500);
+    }
+    digitalWrite(LED_PIN, HIGH);
+    hotovo = true;
+  } else if (optoState == LOW && hotovo) 
+  {
+    Serial.println("LED svítí.");
+    delay(2000);
+  }
+  delay(2000);
+}
+
