@@ -53,6 +53,5 @@ void loop()
     Serial.println("LED svítí.");
     delay(2000);
   }
-  delay(2000);
 }
 
