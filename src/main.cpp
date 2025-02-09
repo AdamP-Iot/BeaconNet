@@ -3,76 +3,130 @@
 #include <PubSubClient.h>
 #include <esp_sleep.h>
 #include <ArduinoJson.h>
-
-const char* ssid = "Pickova-CZNET.CZ"; // Název WiFi sítě
-const char* password = "Pavlina72"; // Heslo WiFi sítě
-const char* mqtt_server = "test.mosquitto.org"; // MQTT broker adresa
-
+const char* ssid = "Pickova-CZNET.CZ";
+const char* hesloWifi = "Pavlina72";
+const char* mqttServer = "test.mosquitto.org";
 WiFiClient espClient;
 PubSubClient client(espClient);
-
-const int deepSleepDuration = 5 * 60 * 1000000; 
-const int wakeUpPin = 33; 
-void reconnect() {
-  if (!client.connected()) {
-    Serial.print("Zkouším MQTT připojení...");
-    if (client.connect("ESP32Client")) {
-      Serial.println("Připojeno k MQTT brokeru.");
-    } else {
-      Serial.print("Selhalo, rc=");
-      Serial.print(client.state());
-      Serial.println(". Zkouším znovu za 5 sekund.");
-      delay(5000);
+const uint64_t deepSleepTrvani = 30ULL * 1000000; 
+const int wakeUpPiny[] = {32, 33, 25, 26};
+const char* pinNazvy[] = {"zelená", "žlutá", "červená", "houkačka"};
+RTC_DATA_ATTR int posledniHighPin = -1; 
+RTC_DATA_ATTR int stejnySignalPocet = 0; 
+void pripojeni() {
+    if (!client.connected()) {
+        Serial.print("Zkouším MQTT připojení...");
+        if (client.connect("ESP32Client")) {
+            Serial.println("Připojeno k MQTT brokeru.");
+        } else {
+            Serial.print("Selhalo, rc=");
+            Serial.print(client.state());
+            Serial.println(". Resetuji ESP.");
+            ESP.restart();  
+        }
     }
-  }
 }
-
-void setup() {
-  Serial.begin(115200);
-
-  // Kontrola příčiny probuzení
-  esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
-  if (wakeup_reason == ESP_SLEEP_WAKEUP_EXT0) {
-    Serial.println("Probuzen signálem na GPIO.");
-  } else if (wakeup_reason == ESP_SLEEP_WAKEUP_TIMER) {
-    Serial.println("Probuzen časovačem.");
-  } else {
-    Serial.println("Standardní probuzení.");
-  }
-
-  //WiFi
-  WiFi.begin(ssid, password);
+void posliStatus(int pinIndex) 
+{
+  WiFi.begin(ssid, hesloWifi);
   Serial.print("Připojuji se k WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+   {
     delay(1000);
     Serial.print(".");
   }
   Serial.println("\nWiFi připojeno!");
   Serial.print("IP adresa: ");
   Serial.println(WiFi.localIP());
-
-  // MQTT
-  client.setServer(mqtt_server, 1883);
-  reconnect();
-
-  //JSON
+  client.setServer(mqttServer, 1883);
+  pripojeni();
   StaticJsonDocument<200> doc;
-  doc["device"] = "ESP32";
-  doc["status"] = 1; 
+  doc["pin_nazev"] = pinNazvy[pinIndex]; 
+  doc["pin_cislo"] = pinIndex + 1;
   String jsonMessage;
   serializeJson(doc, jsonMessage);
-
-  client.publish("outTopic", jsonMessage.c_str());
-  Serial.println("Odeslána zpráva: " + jsonMessage);
-
-  esp_sleep_enable_timer_wakeup(deepSleepDuration);       
-  esp_sleep_enable_ext0_wakeup(GPIO_NUM_33, 1);           
-
-  //Deep Sleep start
+  client.publish("Adam_esp32", jsonMessage.c_str());
+  Serial.println("Odeslána zpráva: " + jsonMessage
+}
+void setup() 
+{
+  Serial.begin(115200);
+  for (int i = 0; i < 4; i++)
+   {
+    pinMode(wakeUpPiny[i], INPUT);
+  }
+  esp_sleep_wakeup_cause_t wakeupDuvod = esp_sleep_get_wakeup_cause();
+  if (wakeupDuvod == ESP_SLEEP_WAKEUP_EXT1)
+   {
+    Serial.println("Probuzen signálem na GPIO.");
+    for (int i = 0; i < 4; i++) {
+      if (digitalRead(wakeUpPiny[i]) == HIGH)
+       {
+         delay(50);
+         if (posledniHighPin == wakeUpPiny[i])
+         {
+           stejnySignalPocet++;
+           Serial.println("Stejný signál detekován. Počet: " + String(stejnySignalPocet));         
+        } else
+         {
+          Serial.println("Nový signál detekován na GPIO" + String(wakeUpPiny[i]));
+          posledniHighPin = wakeUpPiny[i];
+          stejnySignalPocet = 1; 
+          posliStatus(i);
+        }
+        break;
+      }
+    }
+  } else if (wakeupDuvod == ESP_SLEEP_WAKEUP_TIMER) 
+  {
+    Serial.println("Probuzen časovačem.");
+    bool PinyHigh = false;
+    for (int i = 0; i < 4; i++) {
+      if (digitalRead(wakeUpPiny[i]) == HIGH)
+       {
+        if (posledniHighPin == wakeUpPiny[i]) 
+        {         
+          stejnySignalPocet++;
+          Serial.println("Časovač detekoval stále stejný signál na GPIO" + String(wakeUpPiny[i]));
+          posliStatus(i);
+          PinyHigh = true;
+          break;          
+        } else
+         {
+          Serial.println("Časovač detekoval nový signál na GPIO" + String(wakeUpPiny[i]));
+          posledniHighPin = wakeUpPiny[i];
+          stejnySignalPocet = 1;
+          posliStatus(i);
+          PinyHigh = true;
+          break;
+        }
+      }
+    }
+    if (!PinyHigh)
+     {
+      Serial.println("Časovač nenašel žádný HIGH signál.");
+      posledniHighPin = -1; 
+      stejnySignalPocet = 0; 
+    }
+  } else
+   {
+    Serial.println("Standardní probuzení.");
+  }
+  esp_sleep_enable_timer_wakeup(deepSleepTrvani); 
+  // Povolení probouzení na více GPIO pinech
+  uint64_t maska = 0;
+  for (int i = 0; i < 4; i++)
+   {
+    if (wakeUpPiny[i] != posledniHighPin || stejnySignalPocet == 0)
+     { 
+      maska |= (1ULL << wakeUpPiny[i]); // Povolit všechny kromě posledního pinu
+    }
+  }
+  esp_sleep_enable_ext1_wakeup(maska, ESP_EXT1_WAKEUP_ANY_HIGH);
   Serial.println("ESP přechází do Deep Sleep.");
   esp_deep_sleep_start();
 }
-
-void loop() {
+void loop() 
+{
   
 }
