@@ -3,9 +3,9 @@
 #include <PubSubClient.h>
 #include <esp_sleep.h>
 #include <ArduinoJson.h>
-const char* ssid = "Pickova-CZNET.CZ";
-const char* hesloWifi = "Pavlina72";
-const char* mqttServer = "test.mosquitto.org";
+const char* ssid = "RIT-IOT";
+const char* hesloWifi = "NqUciiZ2Q8YLCur";
+const char* mqttServer = "172.26.5.100";
 WiFiClient espClient;
 PubSubClient client(espClient);
 const uint64_t deepSleepTrvani = 30ULL * 1000000; 
@@ -14,25 +14,29 @@ const char* pinNazvy[] = {"zelená", "žlutá", "červená", "houkačka"};
 RTC_DATA_ATTR int posledniHighPin = -1; 
 RTC_DATA_ATTR int stejnySignalPocet = 0; 
 void pripojeni() {
-    if (!client.connected()) {
-        Serial.print("Zkouším MQTT připojení...");
-        if (client.connect("ESP32Client")) {
-            Serial.println("Připojeno k MQTT brokeru.");
-        } else {
-            Serial.print("Selhalo, rc=");
-            Serial.print(client.state());
-            Serial.println(". Resetuji ESP.");
-            ESP.restart();  
-        }
-    }
+  int znovu = 0;   
+  while (!client.connected() && znovu < 5) {  // Zkusíme 5krát připojit
+      Serial.print("Zkouším MQTT připojení...");
+      if (client.connect("ESP32Client")) {
+          Serial.println("Připojeno k MQTT brokeru.");
+          return;
+      } else {
+          Serial.print("Selhalo, rc=");
+          Serial.println(client.state());
+          delay(3000);
+          znovu++;
+      }
+  }
+  Serial.println("Nepodařilo se připojit k MQTT!");
 }
+
 void posliStatus(int pinIndex) 
 {
   WiFi.begin(ssid, hesloWifi);
   Serial.print("Připojuji se k WiFi");
   while (WiFi.status() != WL_CONNECTED)
    {
-    delay(1000);
+    delay(3000);
     Serial.print(".");
   }
   Serial.println("\nWiFi připojeno!");
@@ -45,8 +49,9 @@ void posliStatus(int pinIndex)
   doc["pin_cislo"] = pinIndex + 1;
   String jsonMessage;
   serializeJson(doc, jsonMessage);
-  client.publish("Adam_esp32", jsonMessage.c_str());
-  Serial.println("Odeslána zpráva: " + jsonMessage
+  client.publish(" /1", jsonMessage.c_str());
+  Serial.println("Odeslána zpráva: " + jsonMessage);
+  delay(500);
 }
 void setup() 
 {
