@@ -3,7 +3,7 @@
 #include <PubSubClient.h>
 #include <esp_sleep.h>
 #include <ArduinoJson.h>
-const char* ssid = "RIT-IOT"; 
+const char* ssid = "RIT-IOT";
 const char* heslo = "NqUciiZ2Q8YLCur";
 const char* mqttServer = "172.26.5.100";
 WiFiClient espClient;
@@ -17,7 +17,7 @@ RTC_DATA_ATTR int pocetProbuzeni = 0;
 #define PIN_25 (1ULL << GPIO_NUM_25)
 #define PIN_26 (1ULL << GPIO_NUM_26)
 uint64_t ext1Mask = PIN_32 | PIN_33 | PIN_25 | PIN_26;
-const long long deepSleepDoba = 10LL * 1000000;
+const long long deepSleepDoba = 60LL * 60LL * 1000000;
 const int maxPocetProbuzeni = 3;
 void reconnect()
  { 
@@ -39,7 +39,7 @@ void reconnect()
 }
 void sendStatusMessage(int pinIndex)
  {
-    WiFi.begin(ssid,heslo);
+    WiFi.begin(ssid, heslo);
     Serial.print("Připojuji se k WiFi");
     unsigned long start = millis();
     while (WiFi.status() != WL_CONNECTED && millis() - start < 15000) 
@@ -82,11 +82,11 @@ void setup()
             if ((wakeUpBitmask & (1ULL << wakeUpPiny[i])) != 0 || digitalRead(wakeUpPiny[i]) == HIGH)
             {
                 aktivniPin = wakeUpPiny[i];
-                Serial.println("Aktivní pin: {0}", String(aktivniPin));
+                Serial.println("Aktivní pin: " + String(aktivniPin));
                 if (aktivniPin == prechoziHighPin) 
                 {
                     pocetProbuzeni++;
-                    Serial.println("Stejný pin detekován {0} x za sebou", String(pocetProbuzeni));
+                    Serial.println("Stejný pin detekován"+ String(pocetProbuzeni) +  "x za sebou");
                     if (pocetProbuzeni >= maxPocetProbuzeni) 
                     {
                         Serial.println("Stejný pin detekován 3x za sebou");
