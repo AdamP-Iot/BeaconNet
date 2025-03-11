@@ -9,6 +9,7 @@ const char* mqttServer = "172.26.5.100";
 WiFiClient espClient;
 PubSubClient client(espClient);
 const int wakeUpPiny[] = {32, 33, 25, 26};
+const int cislo[] = {1, 2, 3, 4};
 const char* pinNazvy[] = {"zelená", "žlutá", "červená", "houkačka"};
 RTC_DATA_ATTR int prechoziHighPin = -1;
 RTC_DATA_ATTR int pocetProbuzeni = 0;
@@ -53,11 +54,11 @@ void sendStatusMessage(int pinIndex)
         client.setServer(mqttServer, 1883);
         reconnect();
         StaticJsonDocument<200> doc;
-        doc["status"] = 1;
+        doc["status"] = cislo[pinIndex];
         doc["pin_nazev"] = pinNazvy[pinIndex];
         String jsonMessage;
         serializeJson(doc, jsonMessage);
-        client.publish("semafor/status", jsonMessage.c_str());
+        client.publish("Adam_esp32/1", jsonMessage.c_str());
         Serial.println("Odeslána zpráva: " + jsonMessage);
     }
      else 
@@ -82,6 +83,7 @@ void setup()
             if ((wakeUpBitmask & (1ULL << wakeUpPiny[i])) != 0 || digitalRead(wakeUpPiny[i]) == HIGH)
             {
                 aktivniPin = wakeUpPiny[i];
+                aktivniPin = cislo[i];
                 Serial.println("Aktivní pin: " + String(aktivniPin));
                 if (aktivniPin == prechoziHighPin) 
                 {
