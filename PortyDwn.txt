@@ -1,0 +1,8 @@
+<<<<<<< HEAD
+https://www.arduino.cc/en/software
+https://dl.espressif.com/dl/package_esp32_index.json
+=======
+https://www.arduino.cc/en/software
+https://dl.espressif.com/dl/package_esp32_index.json
+>>>>>>> e9e5813 (První commit)
+https://www.silabs.com/developer-tools/usb-to-uart-bridge-vcp-drivers?tab=downloads
