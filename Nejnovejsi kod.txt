@@ -3,9 +3,9 @@
 #include <PubSubClient.h>
 #include <esp_sleep.h>
 #include <ArduinoJson.h>
-const char* ssid = "RIT-IOT";
-const char* heslo = "NqUciiZ2Q8YLCur";
-const char* mqttServer = "172.26.5.100";
+const char* ssid = "";
+const char* heslo = "";
+const char* mqttServer = "";
 WiFiClient espClient;
 PubSubClient client(espClient);
 const int wakeUpPiny[] = {32, 33, 25, 26};
